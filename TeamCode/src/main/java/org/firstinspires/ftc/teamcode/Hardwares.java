@@ -1,0 +1,89 @@
+package org.firstinspires.ftc.teamcode;
+
+import androidx.annotation.NonNull;
+
+import com.arcrobotics.ftclib.hardware.ServoEx;
+import com.arcrobotics.ftclib.hardware.SimpleServo;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.jetbrains.annotations.Contract;
+
+public class Hardwares {
+    public Sensors sensors;
+    public Motors motors;
+    public Servos servos;
+
+    public static <T> T getHardware(@NonNull HardwareMap hardwareMap, String name, Class<T> clazz){
+        return hardwareMap.get(clazz, name);
+    }
+
+    @NonNull
+    @Contract("_, _, _, _ -> new")
+    public static ServoEx getHardware(@NonNull HardwareMap hardwareMap, String name, double minAngleDegree, double maxAngleDegree){
+        return new SimpleServo(hardwareMap, name, minAngleDegree, maxAngleDegree);
+    }
+
+    public static class Sensors{
+        public GoBildaPinpointDriver odo;
+        public VoltageSensor voltageSensor;
+        /** Limelight 3A 视觉传感器；硬件配置中缺失时为 null（不阻塞启动）。 */
+        public Limelight3A ll;
+
+        public Sensors(@NonNull HardwareMap hardwareMap){
+            odo = getHardware(hardwareMap, "pinpoint", GoBildaPinpointDriver.class);
+            odo.setOffsets(9.6, 6.8, DistanceUnit.CM);
+            odo.recalibrateIMU();
+            odo.setPosition(new Pose2D(DistanceUnit.CM, 0, 0, AngleUnit.DEGREES, 0));
+            odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+
+            voltageSensor = hardwareMap.voltageSensor.iterator().next();
+
+            // LL 找不到（机器人配置里没有"limelight"，或硬件没装）时静默降级为 null。
+            // VisionBearingTracker 看到 ll==null 永远返回 isFresh=false，
+            // AutoPan 自动退到纯 odo 跟踪——保持没 LL 的车也能跑这套代码。
+            try {
+                ll = hardwareMap.get(Limelight3A.class, "limelight");
+            } catch (Exception e) {
+                ll = null;
+            }
+        }
+    }
+
+    public static class Motors{
+        public DcMotorEx mLeftFront, mRightFront, mLeftRear, mRightRear, shooterLeft, shooterRight, intake, pan;
+        public Motors(@NonNull HardwareMap hardwareMap){
+            mLeftFront = getHardware(hardwareMap, "leftFront", DcMotorEx.class);
+            mRightFront = getHardware(hardwareMap, "rightFront", DcMotorEx.class);
+            mLeftRear = getHardware(hardwareMap, "leftRear", DcMotorEx.class);
+            mRightRear = getHardware(hardwareMap, "rightRear", DcMotorEx.class);
+
+            intake = getHardware(hardwareMap, "intake", DcMotorEx.class);
+
+            shooterLeft = getHardware(hardwareMap, "shooterLeft", DcMotorEx.class);
+            shooterRight = getHardware(hardwareMap, "shooterRight", DcMotorEx.class);
+
+            pan = getHardware(hardwareMap, "pan", DcMotorEx.class);
+        }
+    }
+
+    public static class Servos{
+        public ServoEx gate, pitch;
+        public Servos(@NonNull HardwareMap hardwareMap){
+            gate = getHardware(hardwareMap, "gate", 0, 300);
+            pitch = getHardware(hardwareMap, "pitch", 0, 300);
+        }
+    }
+
+    public Hardwares(HardwareMap hardwareMap){
+        sensors = new Sensors(hardwareMap);
+        motors = new Motors(hardwareMap);
+        servos = new Servos(hardwareMap);
+    }
+}
