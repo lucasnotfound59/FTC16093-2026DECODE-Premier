@@ -39,7 +39,7 @@ public class AutoPan {
     // 常量配置
     // ==========================================
     public static final double MOTOR_TICKS_PER_REV = 145.6; // 28 tick × 5.2
-    public static final double PAN_REV_PER_MOTOR_REVS = 100.0 / 20.0;
+    public static final double PAN_REV_PER_MOTOR_REVS = 120.0 / 35.0;
     public static final double PAN_TICKS_PER_DEGREE = (MOTOR_TICKS_PER_REV * PAN_REV_PER_MOTOR_REVS) / 360.0;
 
     public static final double PAN_POWER = 1;
