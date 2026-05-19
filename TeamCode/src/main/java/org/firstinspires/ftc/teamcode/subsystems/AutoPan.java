@@ -43,7 +43,7 @@ public class AutoPan {
     public static final double PAN_TICKS_PER_DEGREE = (MOTOR_TICKS_PER_REV * PAN_REV_PER_MOTOR_REVS) / 360.0;
 
     public static final double PAN_POWER = 1;
-    public static final double MAX_ANGLE_DEG = 90.0; // 物理线缆限位
+    public static final double MAX_ANGLE_DEG = 50; // 物理线缆限位
 
     /**
      * pan 目标角变化小于此值时不重新下发，避免电机 PIDF 内环 hunting。
