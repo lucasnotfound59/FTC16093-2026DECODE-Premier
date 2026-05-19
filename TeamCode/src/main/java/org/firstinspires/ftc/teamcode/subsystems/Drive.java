@@ -106,8 +106,8 @@ public class Drive {
         // 计算每个轮子的功率
         double frontLeftPower = (rotY + rotX + rotate) / denominator * speedCoefficient;
         double backLeftPower = (rotY - rotX + rotate) / denominator * speedCoefficient;
-        double frontRightPower = (rotY - rotX - rotate) / denominator * speedCoefficient;
-        double backRightPower = (rotY + rotX - rotate) / denominator * speedCoefficient;
+        double frontRightPower = (rotY + rotX - rotate) / denominator * speedCoefficient;
+        double backRightPower = (rotY - rotX - rotate) / denominator * speedCoefficient;
 
         return new double[]{frontLeftPower, frontRightPower, backLeftPower, backRightPower};
     }
@@ -201,7 +201,7 @@ public class Drive {
             if(fieldCentric)
             {
                 currentHeading = odometerData.getHeadingRadians() + Math.toRadians(headingOffset);
-            }else{
+            } else {
                 currentHeading = 0.0;
             }
 

@@ -43,7 +43,7 @@ public class AutoPan {
     public static final double PAN_TICKS_PER_DEGREE = (MOTOR_TICKS_PER_REV * PAN_REV_PER_MOTOR_REVS) / 360.0;
 
     public static final double PAN_POWER = 1;
-    public static final double MAX_ANGLE_DEG = 90.0; // 物理线缆限位
+    public static final double MAX_ANGLE_DEG = 55.0; // 物理线缆限位
 
     /**
      * pan 目标角变化小于此值时不重新下发，避免电机 PIDF 内环 hunting。
@@ -230,7 +230,7 @@ public class AutoPan {
                 currentMode, trackState, currentSource,
                 currentRawTarget, currentPosDeg,
                 isLimitReached, panMotor.getPower(),
-                tracker.isFresh(), tracker.getLastTxDeg(), tracker.getBearingWorldDeg()
+                tracker.isFresh(), tracker.getLastTxDeg(), tracker.getSmoothedBearingWorldDeg()
         );
     }
 
@@ -276,7 +276,7 @@ public class AutoPan {
             double relativeAngle;
             if (tracker.isFresh()) {
                 // 世界系 bearing 减当前 heading = 机器人系下的 pan 目标角
-                relativeAngle = normalizeAngle(tracker.getBearingWorldDeg() - headingNow);
+                relativeAngle = normalizeAngle(tracker.getSmoothedBearingWorldDeg() - headingNow);
                 currentSource = Source.VISION;
             } else {
                 // 视觉超过保鲜期（VISION_HOLD_MS），LL 可能被挡或硬件未配

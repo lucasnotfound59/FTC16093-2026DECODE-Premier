@@ -6,6 +6,8 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import java.util.List;
 
+import lombok.Getter;
+
 /**
  * 视觉方位角跟踪器：封装 Limelight 3A 的读取、ID 过滤、延迟补偿、滤波和保鲜期判断。
  *
@@ -96,11 +98,13 @@ public class VisionBearingTracker {
     // 成员
     // ==========================================
     private final Limelight3A ll;
+    @Getter
     private final int targetTagId;
-
+    @Getter
     private double smoothedBearingWorldDeg = 0.0;
     private boolean hasSmoothed = false;
     private long lastValidNanos = 0L;
+    @Getter
     private double lastTxDeg = Double.NaN;
 
     /**
@@ -202,20 +206,6 @@ public class VisionBearingTracker {
         if (lastValidNanos == 0L) return false;
         double elapsedMs = (System.nanoTime() - lastValidNanos) / 1e6;
         return elapsedMs < VISION_HOLD_MS;
-    }
-
-    /** 平滑后的世界系方位角（度），仅在 isFresh() 为 true 时有效。 */
-    public double getBearingWorldDeg() {
-        return smoothedBearingWorldDeg;
-    }
-
-    /** 最近一次看到 tag 时的原始 tx（度）；NaN 表示从未看到过。仅供遥测/调试。 */
-    public double getLastTxDeg() {
-        return lastTxDeg;
-    }
-
-    public int getTargetTagId() {
-        return targetTagId;
     }
 
     public boolean isEnabled() {
