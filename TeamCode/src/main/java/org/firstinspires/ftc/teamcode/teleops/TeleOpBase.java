@@ -9,7 +9,6 @@ import com.arcrobotics.ftclib.command.ParallelCommandGroup;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Hardwares;
 import org.firstinspires.ftc.teamcode.subsystems.AutoPan;
@@ -26,14 +25,14 @@ import org.firstinspires.ftc.teamcode.utils.XKCommandOpmode;
 public class TeleOpBase extends XKCommandOpmode {
     protected final double targetX;
     protected final double targetY;
-    protected final double startDeg;
+    protected final Pose2D startPose;
     protected final Pose2D hpZonePose;
 
 
-    public TeleOpBase(double targetX, double targetY, double startDeg, Pose2D hpZonePose, double headingOffset) {
+    public TeleOpBase(double targetX, double targetY, Pose2D startPose, Pose2D hpZonePose, double headingOffset) {
         this.targetX = targetX;
         this.targetY = targetY;
-        this.startDeg = startDeg;
+        this.startPose = startPose;
         this.hpZonePose = hpZonePose;
         this.headingOffset = headingOffset;
     }
@@ -44,8 +43,8 @@ public class TeleOpBase extends XKCommandOpmode {
     private Gate gate;
     private AutoPan autoPan;
     private Drive drive;
-    private PinpointDriverData pinpointDriverData;
-    private GamepadEx gamepad1, gamepad2;
+    private PinpointDriverData pdd;
+    private GamepadEx gamepad1;
     private Drive.DriveCommand driveCommand;
     private MultipleTelemetry multipleTelemetry;
     private double panOffset = 0;
@@ -57,7 +56,6 @@ public class TeleOpBase extends XKCommandOpmode {
         this.multipleTelemetry.addData("TargetX", targetX);
         this.multipleTelemetry.addData("TargetY", targetY);
         this.gamepad1 = new GamepadEx(super.gamepad1);
-        this.gamepad2 = new GamepadEx(super.gamepad2);
         CommandScheduler.getInstance().reset();
 
         hardwares = new Hardwares(hardwareMap);
@@ -65,8 +63,8 @@ public class TeleOpBase extends XKCommandOpmode {
         intake = new Intake(hardwares);
         gate = new Gate(hardwares);
 
-        hardwares.sensors.odo.setHeading(startDeg, AngleUnit.DEGREES);
-        this.pinpointDriverData = new PinpointDriverData(hardwares.sensors.odo);
+        pdd = new PinpointDriverData(hardwares.sensors.odo);
+        pdd.setRobotPosition(startPose);
 
         autoPan = new AutoPan(hardwares, targetX, targetY, FieldConstants.tagIdForGoalY(targetY));
         autoPan.init();
@@ -80,7 +78,7 @@ public class TeleOpBase extends XKCommandOpmode {
                 () -> gamepad1.getLeftX(),
                 () -> gamepad1.getLeftY(),
                 () -> -gamepad1.getRightX(),
-                () -> pinpointDriverData,
+                () -> pdd,
                 0.8,
                 true,
                 false,
@@ -100,14 +98,14 @@ public class TeleOpBase extends XKCommandOpmode {
     public void run() {
         CommandScheduler.getInstance().run();
 
-        this.pinpointDriverData.update();
-        autoPan.run(this.pinpointDriverData, panOffset);
+        this.pdd.update();
+        autoPan.run(this.pdd, panOffset);
         shooter.run();
 
-        this.multipleTelemetry.addData("Heading (Rad)", pinpointDriverData.getHeadingRadians());
-        this.multipleTelemetry.addData("Heading (Deg)", pinpointDriverData.getHeadingDegrees());
-        this.multipleTelemetry.addData("X", pinpointDriverData.getRobotX());
-        this.multipleTelemetry.addData("Y", pinpointDriverData.getRobotY());
+        this.multipleTelemetry.addData("Heading (Rad)", pdd.getHeadingRadians());
+        this.multipleTelemetry.addData("Heading (Deg)", pdd.getHeadingDegrees());
+        this.multipleTelemetry.addData("X", pdd.getRobotX());
+        this.multipleTelemetry.addData("Y", pdd.getRobotY());
 
         this.multipleTelemetry.addLine("---");
         double[] velocities = drive.getVelocities();

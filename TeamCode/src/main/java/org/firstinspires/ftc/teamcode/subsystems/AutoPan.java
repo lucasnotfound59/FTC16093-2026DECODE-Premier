@@ -43,7 +43,7 @@ public class AutoPan {
     public static final double PAN_TICKS_PER_DEGREE = (MOTOR_TICKS_PER_REV * PAN_REV_PER_MOTOR_REVS) / 360.0;
 
     public static final double PAN_POWER = 1;
-    public static final double MAX_ANGLE_DEG = 50; // 物理线缆限位
+    public static final double MAX_ANGLE_DEG = 55.0; // 物理线缆限位
 
     /**
      * pan 目标角变化小于此值时不重新下发，避免电机 PIDF 内环 hunting。
@@ -230,7 +230,7 @@ public class AutoPan {
                 currentMode, trackState, currentSource,
                 currentRawTarget, currentPosDeg,
                 isLimitReached, panMotor.getPower(),
-                tracker.isFresh(), tracker.getLastTxDeg(), tracker.getBearingWorldDeg()
+                tracker.isFresh(), tracker.getLastTxDeg(), tracker.getSmoothedBearingWorldDeg()
         );
     }
 
@@ -276,15 +276,15 @@ public class AutoPan {
             double relativeAngle;
             if (tracker.isFresh()) {
                 // 世界系 bearing 减当前 heading = 机器人系下的 pan 目标角
-                relativeAngle = normalizeAngle(tracker.getBearingWorldDeg() - headingNow);
+                relativeAngle = normalizeAngle(tracker.getSmoothedBearingWorldDeg() - headingNow);
                 currentSource = Source.VISION;
             } else {
                 // 视觉超过保鲜期（VISION_HOLD_MS），LL 可能被挡或硬件未配
                 relativeAngle = computeBearingFromOdo(ppd);
                 currentSource = Source.ODO_FALLBACK;
             }
-            // LOCKED 状态下也会返回有效角度（被夹在 ±MAX_ANGLE_DEG），
-            // 走正常的死区 + tick 下发流程，pan 物理上停在限位
+            // 超过 ±MAX_ANGLE_DEG 直接钳位到限位，target 不会越界，
+            // 电机只会被 PIDF 顶在 ±90°，没有继续转的指令。
             targetAngleRaw = applyLockingStateMachine(relativeAngle);
         }
 
@@ -302,6 +302,9 @@ public class AutoPan {
             panMotor.setTargetPosition(targetTicks);
             if (panMotor.getMode() != DcMotor.RunMode.RUN_TO_POSITION) {
                 panMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
+            // 解锁后从 power=0 恢复，需要重新加电
+            if (panMotor.getPower() != PAN_POWER) {
                 panMotor.setPower(PAN_POWER);
             }
             lastTargetTicks = targetTicks;
@@ -321,39 +324,28 @@ public class AutoPan {
     }
 
     /**
-     * 物理软限位状态机：pan 因线缆走线限制只能在 ±MAX_ANGLE_DEG 内转。
-     * 超出范围时把 pan 顶到限位侧不动，等目标自然回到范围。
-     * 关键：把 pan 推到限位（而不是冻在原地）能让 LL 在 FOV 内捕获到稍微越界的 tag，
-     * 视觉一旦更新 tracker，下一帧相对角度就可能回到 ±90° 内，自动解锁。
+     * 物理软限位：pan 因线缆走线限制只能在 ±MAX_ANGLE_DEG 内转。
+     * 超出范围直接钳位到 ±MAX_ANGLE_DEG，target 永远不越界，PIDF 把电机顶在限位，
+     * 没有"继续转"的指令可执行。
      *
-     * 注意：这是 TRACK 模式的内部状态，跟外部的 HOLD/TRACK Mode 互相独立——
-     * LOCKED 状态下 currentMode 仍然是 TRACK，操作手按 DPAD_UP 仍能切走。
+     * TrackState 仅用于 isLimitReached 遥测，不影响行为。
      */
     private double applyLockingStateMachine(double relativeAngle) {
-        boolean inRange = Math.abs(relativeAngle) <= MAX_ANGLE_DEG;
-        if (trackState == TrackState.TRACKING) {
-            if (inRange) {
-                isLimitReached = false;
-                return relativeAngle;
-            }
-            // 进入锁定：把 pan 推到限位侧，让 LL 在 FOV 内最大化捕获 tag 的机会。
-            // 真实目标在 ±90°~±121° 内（限位 + LL HFOV ±31°）时视觉仍可能锁定，
-            // 一旦 tracker 看到 tag，下一帧 relativeAngle 用视觉算就可能回到 ±90° 内自动解锁。
+        if (relativeAngle > MAX_ANGLE_DEG) {
             trackState = TrackState.LOCKED;
-            lockedSignum = Math.signum(relativeAngle);
+            lockedSignum = 1;
             isLimitReached = true;
-            return lockedSignum * MAX_ANGLE_DEG;
-        } else {
-            // LOCKED：继续把 pan 顶在限位处
-            if (!inRange) {
-                isLimitReached = true;
-                return lockedSignum * MAX_ANGLE_DEG;
-            }
-            // 回到范围内 → 解锁
-            trackState = TrackState.TRACKING;
-            isLimitReached = false;
-            return relativeAngle;
+            return MAX_ANGLE_DEG;
         }
+        if (relativeAngle < -MAX_ANGLE_DEG) {
+            trackState = TrackState.LOCKED;
+            lockedSignum = -1;
+            isLimitReached = true;
+            return -MAX_ANGLE_DEG;
+        }
+        trackState = TrackState.TRACKING;
+        isLimitReached = false;
+        return relativeAngle;
     }
 
     private static double normalizeAngle(double angle) {
