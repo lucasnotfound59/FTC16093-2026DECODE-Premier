@@ -79,7 +79,6 @@ public class TeleOpBase extends XKCommandOpmode {
         gate = new Gate(hardwares);
 
         pdd = new PinpointDriverData(hardwares.sensors.odo);
-        pdd.setRobotPosition(startPose);
 
         autoPan = new AutoPan(hardwares, targetX, targetY, FieldConstants.tagIdForGoalY(targetY));
         autoPan.init();
@@ -105,6 +104,7 @@ public class TeleOpBase extends XKCommandOpmode {
 
     @Override
     public void onStart() {
+        pdd.setRobotPosition(startPose);
         gate.close().schedule();
         autoPan.setup();
     }

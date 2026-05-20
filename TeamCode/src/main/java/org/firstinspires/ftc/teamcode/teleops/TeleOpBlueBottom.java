@@ -10,7 +10,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 public class TeleOpBlueBottom extends TeleOpBase {
     public TeleOpBlueBottom() {
         // target = Blue goal (10, 133) inch，PP 场地坐标系
-        super(10, 133,
+        super(10, 137,
                 new Pose2D(DistanceUnit.INCH, 39, 31, AngleUnit.DEGREES, 90),
                 new Pose2D(DistanceUnit.INCH, -27.56, -90.55, AngleUnit.DEGREES, -90),
                 0);

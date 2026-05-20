@@ -46,7 +46,7 @@ public class Hardwares {
             // 编码器解析度必须显式指定！不调用的话 Pinpoint 用默认 pod 型号算位置，
             // 跟实际 4-bar pod 不匹配会导致位置读数严重错误（甚至"X/Y 几乎不动"）。
             odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-            odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+            odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
             // 一步把位置和 IMU 都重置——比 recalibrateIMU + setPosition(0,0,0) 更原子，
             // 避免异步校准跟 setPosition 时序竞争（之前怀疑这导致 startPose 设了又被清）。
             odo.resetPosAndIMU();
