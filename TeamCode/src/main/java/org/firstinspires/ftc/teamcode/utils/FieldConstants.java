@@ -3,13 +3,14 @@ package org.firstinspires.ftc.teamcode.utils;
 /**
  * 场地常量：AprilTag ID、Goal 坐标查找等。
  *
- * 坐标系约定：场地中心原点，Y > 0 为蓝方半场，Y < 0 为红方半场。
+ * <h3>坐标系约定（与 AutoPan / PinpointDriverData 一致）</h3>
+ * PedroPathing 场地系：原点在场地一角，X / Y 全正数，单位 <b>inch</b>。
+ * 全工程统一 inch，AutoPan / PP follower / ShooterTuner 同一单位互通。
  *
- * <h3>注意：{@link #tagIdForGoalY(double)} 仅适用于 TeleOp</h3>
- * Auto 的 BottomAutoBase 用"起始位置"作原点，TopAutoBase 用"goal"作原点
- * （两位程序员各写一边，坐标系约定从未统一）。这意味着 TopAuto 里的 {@code targetY}
- * 跟 alliance 没有对应关系（TopAutoBlue 和 TopAutoRed 都传 (30, 75)）。
- * 给 Auto 加视觉跟踪前必须显式从 alliance 选 tag ID，不能依赖 Y 符号推断。
+ * <h3>⚠️ tagIdForGoalY 已失效</h3>
+ * 新坐标系下蓝/红 goal Y 同号（都为正），Y 符号已经不能区分 alliance。
+ * 不要再用 {@link #tagIdForGoalY(double)} —— 应该由 OpMode 直接传 TAG_ID_BLUE_GOAL
+ * 或 TAG_ID_RED_GOAL 给 AutoPan。该方法保留只为兼容旧调用点，新代码勿用。
  *
  * <h3>Tag ID 占位</h3>
  * 实际 ID 待 Decode 2026 官方手册确认；占位值仅为编译通过用，
@@ -18,7 +19,6 @@ package org.firstinspires.ftc.teamcode.utils;
 public final class FieldConstants {
     private FieldConstants() {}
 
-    // TODO: 用 Decode 2026 官方手册的实际 tag ID 替换
     public static final int TAG_ID_BLUE_GOAL = 20;
     public static final int TAG_ID_RED_GOAL  = 24;
 

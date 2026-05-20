@@ -24,8 +24,9 @@ public class ShooterTuner extends XKCommandOpmode {
     public static double SHOOTER_TARGET_VEL = 2200;
     public static double PITCH_TARGET_ANGLE = 0;
     public static double INTAKE_PWR = 1;
-    public static double targetX = 320;
-    public static double targetY = 122;
+    // PP 场地系（inch）。原值 320, 122 cm = 125.98, 48.03 inch
+    public static double targetX = 125.98;
+    public static double targetY = 48.03;
     private Hardwares hardwares;
     private GamepadEx gamepadEx;
     private Shooter shooter;

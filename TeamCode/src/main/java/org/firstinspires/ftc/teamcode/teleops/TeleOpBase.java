@@ -22,6 +22,14 @@ import org.firstinspires.ftc.teamcode.utils.FieldConstants;
 import org.firstinspires.ftc.teamcode.utils.XKCommandOpmode;
 
 
+/**
+ * <h3>坐标系与单位约定（全工程统一 inch）</h3>
+ * <ul>
+ *   <li>{@code targetX}, {@code targetY}：<b>inch</b>，PP 场地系。</li>
+ *   <li>{@code startPose}, {@code hpZonePose}：{@link Pose2D}，推荐用 INCH 显式标注。
+ *       通过 {@code pdd.setRobotPosition()} 显式提取 inch 数值再写硬件，避开 SDK 单位坑。</li>
+ * </ul>
+ */
 public class TeleOpBase extends XKCommandOpmode {
     protected final double targetX;
     protected final double targetY;
@@ -29,6 +37,13 @@ public class TeleOpBase extends XKCommandOpmode {
     protected final Pose2D hpZonePose;
 
 
+    /**
+     * @param targetX     目标 X（<b>inch</b>，PP 场地系）
+     * @param targetY     目标 Y（<b>inch</b>，PP 场地系）
+     * @param startPose   机器人初始位姿，{@link Pose2D} INCH 标注
+     * @param hpZonePose  HP zone 位姿，{@link Pose2D} INCH 标注
+     * @param headingOffset 场地中心驱动模式下的航向偏置（度）
+     */
     public TeleOpBase(double targetX, double targetY, Pose2D startPose, Pose2D hpZonePose, double headingOffset) {
         this.targetX = targetX;
         this.targetY = targetY;
@@ -104,8 +119,10 @@ public class TeleOpBase extends XKCommandOpmode {
 
         this.multipleTelemetry.addData("Heading (Rad)", pdd.getHeadingRadians());
         this.multipleTelemetry.addData("Heading (Deg)", pdd.getHeadingDegrees());
-        this.multipleTelemetry.addData("X", pdd.getRobotX());
-        this.multipleTelemetry.addData("Y", pdd.getRobotY());
+        this.multipleTelemetry.addData("X (inch)", pdd.getRobotX());
+        this.multipleTelemetry.addData("Y (inch)", pdd.getRobotY());
+        // Pinpoint 设备状态：READY = 两个 pod 都工作；FAULT_X_POD_NOT_DETECTED 等表示某个 pod 没读到
+        this.multipleTelemetry.addData("pinpoint status", hardwares.sensors.odo.getDeviceStatus());
 
         this.multipleTelemetry.addLine("---");
         double[] velocities = drive.getVelocities();
@@ -126,6 +143,27 @@ public class TeleOpBase extends XKCommandOpmode {
         this.multipleTelemetry.addData("vision fresh", panTelemetry.visionFresh);
         this.multipleTelemetry.addData("vision tx (deg)", panTelemetry.lastTxDeg);
         this.multipleTelemetry.addData("vision bearing world (deg)", panTelemetry.smoothedBearingWorldDeg);
+
+        // 当前 pan 实际瞄准的场地坐标（把瞄准射线延伸到 Y = targetY 那一行，看 X 落点）
+        // 跟 target(X, Y) 对比就能直接看出准不准。
+        double worldAimDeg = pdd.getHeadingDegrees() + panTelemetry.currentAngle;
+        double worldAimRad = Math.toRadians(worldAimDeg);
+        double sinA = Math.sin(worldAimRad);
+        double cosA = Math.cos(worldAimRad);
+        double aimedX, aimedY;
+        if (Math.abs(sinA) < 1e-6) {
+            // 瞄准射线几乎水平（沿 X 轴方向），交不到目标 Y 行 → 标记无效
+            aimedX = Double.NaN;
+            aimedY = Double.NaN;
+        } else {
+            double t = (targetY - pdd.getRobotY()) / sinA;
+            aimedX = pdd.getRobotX() + cosA * t;
+            aimedY = targetY;
+        }
+        this.multipleTelemetry.addData("target (inch)", String.format("(%.1f, %.1f)", targetX, targetY));
+        this.multipleTelemetry.addData("aim world bearing (deg)", worldAimDeg);
+        this.multipleTelemetry.addData("aim point @ targetY (inch)", String.format("(%.1f, %.1f)", aimedX, aimedY));
+        this.multipleTelemetry.addData("aim X error (inch)", aimedX - targetX);
 
         this.multipleTelemetry.addLine("---");
         Shooter.TelemetryState shooterState = shooter.getTelemetryState();

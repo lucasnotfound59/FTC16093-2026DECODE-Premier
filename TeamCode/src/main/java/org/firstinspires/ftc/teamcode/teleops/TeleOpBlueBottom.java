@@ -9,9 +9,10 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 @TeleOp(name = "TeleOp Blue Bottom", group = "TeleOp")
 public class TeleOpBlueBottom extends TeleOpBase {
     public TeleOpBlueBottom() {
-        super(-99.06, 287.02,
-                new Pose2D(DistanceUnit.INCH, 39, 31, AngleUnit.DEGREES, 180),
-                new Pose2D(DistanceUnit.CM, -70, -230, AngleUnit.DEGREES, -90),
-                180);
+        // target = Blue goal (10, 133) inch，PP 场地坐标系
+        super(10, 133,
+                new Pose2D(DistanceUnit.INCH, 39, 31, AngleUnit.DEGREES, 90),
+                new Pose2D(DistanceUnit.INCH, -27.56, -90.55, AngleUnit.DEGREES, -90),
+                0);
     }
 }

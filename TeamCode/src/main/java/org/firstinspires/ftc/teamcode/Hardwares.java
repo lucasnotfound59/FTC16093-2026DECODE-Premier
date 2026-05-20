@@ -38,10 +38,18 @@ public class Hardwares {
 
         public Sensors(@NonNull HardwareMap hardwareMap){
             odo = getHardware(hardwareMap, "pinpoint", GoBildaPinpointDriver.class);
-            odo.setOffsets(9.6, 6.8, DistanceUnit.CM);
-            odo.recalibrateIMU();
-            odo.setPosition(new Pose2D(DistanceUnit.CM, 0, 0, AngleUnit.DEGREES, 0));
+            // 按官方 sample 推荐顺序配置：offsets → resolution → directions → resetPosAndIMU。
+            //
+            // Pod 安装偏置：9.6 cm = 3.78 inch（X 前向 pod 横向偏置），6.8 cm = 2.68 inch（Y 横向 pod 前向偏置）。
+            // 跟 PP 的 Constants.localizerConstants 数值一致，单位换算后等价（9.6 cm = 3.78 inch）。
+            odo.setOffsets(3.78, 2.68, DistanceUnit.INCH);
+            // 编码器解析度必须显式指定！不调用的话 Pinpoint 用默认 pod 型号算位置，
+            // 跟实际 4-bar pod 不匹配会导致位置读数严重错误（甚至"X/Y 几乎不动"）。
+            odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
             odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+            // 一步把位置和 IMU 都重置——比 recalibrateIMU + setPosition(0,0,0) 更原子，
+            // 避免异步校准跟 setPosition 时序竞争（之前怀疑这导致 startPose 设了又被清）。
+            odo.resetPosAndIMU();
 
             voltageSensor = hardwareMap.voltageSensor.iterator().next();
 

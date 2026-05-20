@@ -7,7 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public class BottomAutoRedMini extends BottomAutoBaseMini{
     public BottomAutoRedMini() {
         super(
-                310,-120, -90,
+                // autoPanTarget 改 inch（原 310, -120 cm = 122.05, -47.24 inch）
+                122.05, -47.24, -90,
                 new Pose(85, 10, 0),
                 new Pose(130, 10, 0),
                 new Pose(130, 20, 0),

@@ -7,7 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public class TopAutoRed extends TopAutoBase {
     public TopAutoRed() {
         super(
-            30, 75, 0,
+            // autoPanTarget 改 inch（原 30, 75 cm = 11.81, 29.53 inch）
+            11.81, 29.53, 0,
 
             new Pose(114, 130.5, Math.toRadians(90)),
 

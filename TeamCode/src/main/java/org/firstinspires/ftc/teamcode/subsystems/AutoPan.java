@@ -32,6 +32,11 @@ import org.firstinspires.ftc.teamcode.utils.FieldConstants;
  * <h3>输出去抖动</h3>
  * 死区 ({@link #DEADBAND_DEG}) + ticks 去重，避免电机 PIDF 内环 hunting。
  * 两者作用环节不同：死区滤掉控制目标的微小变化，ticks 去重消除量化误差导致的重复下发。
+ *
+ * <h3>坐标系与单位</h3>
+ * <b>{@code targetX}, {@code targetY} 单位是 inch，PedroPathing 场地系</b>
+ * （原点场地一角，全正数）。{@link PinpointDriverData#getRobotX()} 也是 inch，二者直接相减。
+ * 全工程统一 inch，跟 PP follower 同单位，方便 auto / teleop / shooter tuner 互相对齐。
  */
 public class AutoPan {
 
@@ -110,8 +115,8 @@ public class AutoPan {
 
     /**
      * @param hardwares    硬件映射
-     * @param targetX      目标 X (cm)，场地坐标系
-     * @param targetY      目标 Y (cm)，场地坐标系
+     * @param targetX      目标 X (inch)，PP 场地坐标系
+     * @param targetY      目标 Y (inch)，PP 场地坐标系
      * @param targetTagId  对应 goal 的 AprilTag ID；&lt; 0 禁用视觉，纯 odo 跟踪
      */
     public AutoPan(@NonNull Hardwares hardwares, double targetX, double targetY, int targetTagId) {
@@ -142,8 +147,10 @@ public class AutoPan {
         lastCommandedAngle = 0.0;
         trackState = TrackState.TRACKING;
         tracker.reset();
-
-        odo.recalibrateIMU();
+        // 不再调 odo.recalibrateIMU()——这里调用时机在 TeleOpBase.setRobotPosition() 之后，
+        // 会把刚设上的 heading / position 全部清零，导致 AutoPan 用错误的 heading 算 pan，
+        // pan 永远被钳到 ±MAX_ANGLE_DEG 限位（"在随便瞄准"的根因）。
+        // IMU 校准只在 Hardwares 构造里调一次就够，时机比这里早。
     }
 
     /**

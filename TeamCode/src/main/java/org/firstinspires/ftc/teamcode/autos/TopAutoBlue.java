@@ -7,7 +7,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public class TopAutoBlue extends TopAutoBase {
     public TopAutoBlue() {
         super(
-            30, 75,0,
+            // autoPanTarget 改 inch（原 30, 75 cm = 11.81, 29.53 inch）
+            11.81, 29.53, 0,
             new Pose(30, 130.5, Math.toRadians(90)), // start pos
             new Pose(47, 84.3, Math.toRadians(180)),
             new Pose(47, 59, Math.toRadians(180)),

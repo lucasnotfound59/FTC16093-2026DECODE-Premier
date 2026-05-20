@@ -22,6 +22,10 @@ import org.firstinspires.ftc.teamcode.utils.XKCommandOpmode;
 
 import java.util.function.Supplier;
 
+/**
+ * <h3>坐标系与单位约定（全工程统一 inch）</h3>
+ * 所有 {@link Pose} 和 {@code autoPanTargetX/Y} 都是 <b>inch</b>，PP 场地系。
+ */
 public class BottomAutoBaseMini extends XKCommandOpmode {
     protected final double autoPanTargetX;
     protected final double autoPanTargetY;
