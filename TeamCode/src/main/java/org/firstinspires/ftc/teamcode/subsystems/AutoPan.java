@@ -103,13 +103,6 @@ public class AutoPan {
 
     private boolean isLimitReached = false;
     private double currentRawTarget = 0.0;
-    /**
-     * 目标进入 LOCKED 状态时记录的方位符号（+1 = 目标在右侧 / -1 = 在左侧）。
-     * LOCKED 期间 pan 物理上被顶到 {@code lockedSignum * MAX_ANGLE_DEG}，
-     * 让 LL 在 FOV 内最大化捕获越界 tag 的机会。
-     */
-    private double lockedSignum = 0.0;
-
     private int lastTargetTicks = Integer.MIN_VALUE;
     private double lastCommandedAngle = 0.0;
 
@@ -340,13 +333,11 @@ public class AutoPan {
     private double applyLockingStateMachine(double relativeAngle) {
         if (relativeAngle > MAX_ANGLE_DEG) {
             trackState = TrackState.LOCKED;
-            lockedSignum = 1;
             isLimitReached = true;
             return MAX_ANGLE_DEG;
         }
         if (relativeAngle < -MAX_ANGLE_DEG) {
             trackState = TrackState.LOCKED;
-            lockedSignum = -1;
             isLimitReached = true;
             return -MAX_ANGLE_DEG;
         }
